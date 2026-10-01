@@ -1,37 +1,1321 @@
 <!DOCTYPE html>
-<html>
-<body>
-  <h2>Image Resizer</h2>
-  <input type="file" id="file" accept="image/*"><br><br>
-  Width <input type="number" id="w" value="300">
-  Height <input type="number" id="h" value="300">
-  <select id="fmt"><option>JPEG</option><option>PNG</option><option>WEBP</option></select>
-  <button onclick="go()">Resize</button>
-  <p id="info"></p>
-  <img id="out"><br>
-  <a id="dl" download="resized">Download</a>
+<html lang="en">
 
-<script>
-const URL_ = "https://ytfif5g5deer5cwtvye2gmn7pm0sirqm.lambda-url.ap-southeast-2.on.aws/";
-function go() {
-  const f = document.getElementById("file").files[0];
-  if (!f) return alert("Pick an image");
-  const r = new FileReader();
-  r.onload = async () => {
-    const res = await fetch(URL_, {
-      method: "POST",
-      body: JSON.stringify({
-        image: r.result.split(",")[1],
-        width: +w.value, height: +h.value, format: fmt.value })
-    });
-    const d = await res.json();
-    if (d.error) return info.innerText = d.error;
-    const src = `data:image/${d.format.toLowerCase()};base64,${d.image}`;
-    out.src = src; dl.href = src;
-    info.innerText = `New size: ${d.size[0]} x ${d.size[1]}`;
-  };
-  r.readAsDataURL(f);
-}
-</script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Image Resizer</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #fff8f1 0px,
+          #fff8f1 28px,
+          #ffe3eb 28px,
+          #ffe3eb 36px
+        );
+
+      font-family: Arial, Helvetica, sans-serif;
+      color: #7d1635;
+    }
+
+
+    /* =========================
+       MAIN PAGE
+    ========================= */
+
+    .page {
+      width: min(1400px, 94%);
+      min-height: 92vh;
+
+      margin: 30px auto;
+
+      display: grid;
+      grid-template-columns: 55% 45%;
+
+      background: #fffaf4;
+
+      border-top: 8px solid #bd1738;
+      border-bottom: 14px solid #bd1738;
+
+      box-shadow:
+        0 12px 40px rgba(90, 10, 35, 0.18);
+
+      overflow: hidden;
+    }
+
+
+    /* =========================
+       LEFT SIDE
+    ========================= */
+
+    .content {
+      padding: 70px 70px 60px;
+      background: #fffaf4;
+    }
+
+
+    .eyebrow {
+      font-size: 16px;
+      font-weight: 700;
+
+      letter-spacing: 2px;
+
+      margin-bottom: 22px;
+    }
+
+
+    h1 {
+      margin: 0;
+
+      font-family: Georgia, "Times New Roman", serif;
+
+      font-size: clamp(54px, 5vw, 82px);
+
+      line-height: 0.95;
+
+      font-weight: 500;
+
+      color: #861634;
+    }
+
+
+    h1 span {
+      display: block;
+    }
+
+
+    .subtitle {
+      max-width: 650px;
+
+      margin: 28px 0 34px;
+
+      font-size: 19px;
+
+      line-height: 1.45;
+
+      color: #83304a;
+    }
+
+
+    /* =========================
+       UPLOAD AREA
+    ========================= */
+
+    .upload-area {
+      position: relative;
+
+      margin: 30px 0;
+
+      padding: 30px;
+
+      background: #ffd4df;
+
+      border-radius: 22px;
+    }
+
+
+    .upload-area::before {
+      content: "";
+
+      position: absolute;
+
+      inset: 8px;
+
+      border: 2px dashed #c52c50;
+
+      border-radius: 16px;
+
+      pointer-events: none;
+    }
+
+
+    .upload-label {
+      position: relative;
+
+      z-index: 1;
+
+      min-height: 110px;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 24px;
+
+      cursor: pointer;
+
+      padding: 20px 25px;
+    }
+
+
+    .upload-icon {
+      width: 58px;
+      height: 58px;
+
+      border: 4px solid #861634;
+
+      border-radius: 8px;
+
+      display: grid;
+
+      place-items: center;
+
+      font-size: 30px;
+
+      flex-shrink: 0;
+    }
+
+
+    .upload-title {
+      font-size: 21px;
+
+      font-weight: 700;
+
+      margin-bottom: 6px;
+    }
+
+
+    .file-name {
+      font-size: 16px;
+
+      color: #8d5263;
+
+      word-break: break-word;
+    }
+
+
+    #file {
+      display: none;
+    }
+
+
+    /* =========================
+       CONTROLS
+    ========================= */
+
+    .controls {
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr
+        1fr;
+
+      gap: 18px;
+
+      margin-top: 20px;
+    }
+
+
+    .field label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      font-size: 15px;
+
+      font-weight: 700;
+    }
+
+
+    input[type="number"],
+    select {
+
+      width: 100%;
+
+      height: 50px;
+
+      border: 2px solid #e8b8c5;
+
+      border-radius: 8px;
+
+      background: #fffdf9;
+
+      color: #7d1635;
+
+      padding: 0 14px;
+
+      font-size: 17px;
+
+      outline: none;
+    }
+
+
+    input[type="number"]:focus,
+    select:focus {
+      border-color: #bd1738;
+    }
+
+
+    /* =========================
+       RESIZE BUTTON
+    ========================= */
+
+    .resize-btn {
+
+      margin-top: 28px;
+
+      min-width: 330px;
+
+      height: 62px;
+
+      border: none;
+
+      border-radius: 8px;
+
+      background: #c91d3d;
+
+      color: white;
+
+      font-size: 17px;
+
+      font-weight: 800;
+
+      letter-spacing: 3px;
+
+      cursor: pointer;
+
+      box-shadow: 0 7px 0 #8d1530;
+
+      transition: 0.15s ease;
+    }
+
+
+    .resize-btn:hover {
+
+      background: #a91532;
+
+      transform: translateY(2px);
+
+      box-shadow: 0 5px 0 #761127;
+    }
+
+
+    .resize-btn:active {
+
+      transform: translateY(6px);
+
+      box-shadow: 0 1px 0 #761127;
+    }
+
+
+    /* =========================
+       RESULT
+    ========================= */
+
+    .result {
+
+      display: none;
+
+      margin-top: 35px;
+
+      padding: 24px;
+
+      border: 2px solid #efbdca;
+
+      border-radius: 14px;
+
+      background: #fff4f6;
+    }
+
+
+    .result.show {
+      display: block;
+    }
+
+
+    .result-title {
+
+      font-family: Georgia, serif;
+
+      font-size: 25px;
+
+      margin-bottom: 12px;
+    }
+
+
+    #info {
+
+      margin: 0 0 18px;
+
+      color: #83304a;
+
+      font-weight: 600;
+    }
+
+
+    #out {
+
+      display: block;
+
+      max-width: 100%;
+
+      max-height: 300px;
+
+      margin: 10px 0 20px;
+
+      border-radius: 8px;
+
+      box-shadow:
+        0 5px 18px rgba(100, 10, 40, 0.15);
+    }
+
+
+    .download {
+
+      display: inline-block;
+
+      padding: 13px 24px;
+
+      border-radius: 7px;
+
+      background: #861634;
+
+      color: white;
+
+      text-decoration: none;
+
+      font-weight: 700;
+
+      letter-spacing: 1px;
+    }
+
+
+    .download:hover {
+      background: #681029;
+    }
+
+
+    .error {
+
+      color: #b00020;
+
+      font-weight: 700;
+
+      margin-top: 18px;
+    }
+
+
+    /* =========================
+       RIGHT SIDE
+    ========================= */
+
+    .visual {
+
+      position: relative;
+
+      min-height: 700px;
+
+      overflow: hidden;
+
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #fff9f4 0px,
+          #fff9f4 25px,
+          #f9c5d5 25px,
+          #f9c5d5 33px
+        );
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+    }
+
+
+    .visual-inner {
+
+      width: 75%;
+
+      height: 75%;
+
+      border: 7px solid #fffaf4;
+
+      outline: 3px solid #b91d3d;
+
+      background: #f7d8df;
+
+      position: relative;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      box-shadow:
+        0 15px 35px rgba(100, 10, 40, 0.2);
+    }
+
+
+    /* =========================
+       IMAGE FRAME
+    ========================= */
+
+    .mock-window {
+
+      width: 78%;
+
+      height: 65%;
+
+      background: #fff8f0;
+
+      border: 6px solid #6f1c2e;
+
+      position: relative;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      overflow: hidden;
+    }
+
+
+    /* Decorative flowers */
+
+    .mock-window::before {
+
+      content: "✿";
+
+      position: absolute;
+
+      top: 10px;
+
+      left: 18px;
+
+      font-size: 38px;
+
+      color: #c51d40;
+
+      z-index: 2;
+    }
+
+
+    .mock-window::after {
+
+      content: "✿";
+
+      position: absolute;
+
+      bottom: 12px;
+
+      right: 18px;
+
+      font-size: 38px;
+
+      color: #e06c89;
+
+      z-index: 2;
+    }
+
+
+    /* =========================
+       CAMERA
+    ========================= */
+
+    .mock-camera {
+
+      width: 160px;
+
+      height: 110px;
+
+      border-radius: 20px;
+
+      background: #9c1835;
+
+      position: relative;
+
+      box-shadow:
+        0 12px 0 #641126;
+
+      transition: opacity 0.3s ease;
+    }
+
+
+    .mock-camera::before {
+
+      content: "";
+
+      position: absolute;
+
+      width: 65px;
+
+      height: 65px;
+
+      border-radius: 50%;
+
+      background: #fff3f3;
+
+      border: 9px solid #e05b79;
+
+      left: 47px;
+
+      top: 25px;
+    }
+
+
+    .mock-camera::after {
+
+      content: "";
+
+      position: absolute;
+
+      width: 45px;
+
+      height: 13px;
+
+      background: #fff3f3;
+
+      border-radius: 5px;
+
+      left: 20px;
+
+      top: -13px;
+    }
+
+
+    /* =========================
+       RESIZED IMAGE
+    ========================= */
+
+    .visual-preview {
+
+      display: none;
+
+      width: 100%;
+
+      height: 100%;
+
+      object-fit: contain;
+
+      background: #fff8f0;
+
+      padding: 15px;
+
+      position: relative;
+
+      z-index: 1;
+    }
+
+
+    /* =========================
+       STICKERS
+    ========================= */
+
+    .sticker {
+
+      position: absolute;
+
+      background: #ffe8ef;
+
+      border: 3px solid #8b1835;
+
+      padding: 12px 20px;
+
+      font-family: Georgia, serif;
+
+      font-size: 19px;
+
+      color: #8b1835;
+
+      transform: rotate(-6deg);
+
+      box-shadow:
+        5px 7px 0 rgba(125, 22, 53, 0.15);
+
+      z-index: 5;
+    }
+
+
+    .sticker.top {
+
+      top: 30px;
+
+      right: 30px;
+
+      border-radius: 50%;
+    }
+
+
+    .sticker.bottom {
+
+      bottom: 35px;
+
+      left: 20px;
+
+      transform: rotate(5deg);
+    }
+
+
+    .visual-title {
+
+      position: absolute;
+
+      top: 40px;
+
+      left: 40px;
+
+      background: #8b1835;
+
+      color: white;
+
+      padding: 10px 18px;
+
+      font-weight: 700;
+
+      letter-spacing: 2px;
+
+      font-size: 14px;
+
+      z-index: 10;
+    }
+
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media (max-width: 900px) {
+
+      .page {
+
+        grid-template-columns: 1fr;
+      }
+
+
+      .visual {
+
+        min-height: 500px;
+      }
+
+
+      .content {
+
+        padding: 45px 30px;
+      }
+    }
+
+
+    @media (max-width: 600px) {
+
+      .controls {
+
+        grid-template-columns: 1fr;
+      }
+
+
+      .resize-btn {
+
+        width: 100%;
+
+        min-width: 0;
+      }
+
+
+      h1 {
+
+        font-size: 50px;
+      }
+
+
+      .visual {
+
+        min-height: 400px;
+      }
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+  <main class="page">
+
+
+    <!-- =========================
+         LEFT SIDE
+    ========================= -->
+
+    <section class="content">
+
+
+      <div class="eyebrow">
+        TOOLS · EDIT · RESIZE · DOWNLOAD
+      </div>
+
+
+      <h1>
+
+        <span>Image Resizer</span>
+
+        <span>Make it fit, your way!</span>
+
+      </h1>
+
+
+      <p class="subtitle">
+
+        Upload an image, set your desired width and height,
+        choose the format, and resize it in seconds.
+
+      </p>
+
+
+      <!-- UPLOAD -->
+
+      <div class="upload-area">
+
+        <label
+          class="upload-label"
+          for="file"
+        >
+
+          <div class="upload-icon">
+            ▧
+          </div>
+
+
+          <div>
+
+            <div class="upload-title">
+              Choose File
+            </div>
+
+
+            <div
+              class="file-name"
+              id="fileName"
+            >
+              No file chosen
+            </div>
+
+          </div>
+
+        </label>
+
+
+        <input
+          type="file"
+          id="file"
+          accept="image/*"
+        >
+
+      </div>
+
+
+      <!-- CONTROLS -->
+
+      <div class="controls">
+
+
+        <div class="field">
+
+          <label for="w">
+            Width
+          </label>
+
+          <input
+            type="number"
+            id="w"
+            value="300"
+            min="1"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="h">
+            Height
+          </label>
+
+          <input
+            type="number"
+            id="h"
+            value="300"
+            min="1"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="fmt">
+            Format
+          </label>
+
+          <select id="fmt">
+
+            <option value="JPEG">
+              JPEG
+            </option>
+
+            <option value="PNG">
+              PNG
+            </option>
+
+            <option value="WEBP">
+              WEBP
+            </option>
+
+          </select>
+
+        </div>
+
+
+      </div>
+
+
+      <!-- RESIZE BUTTON -->
+
+      <button
+        class="resize-btn"
+        onclick="go()"
+      >
+
+        RESIZE IMAGE ✦
+
+      </button>
+
+
+      <div
+        id="error"
+        class="error"
+      ></div>
+
+
+      <!-- RESULT -->
+
+      <div
+        class="result"
+        id="result"
+      >
+
+
+        <div class="result-title">
+          Your resized image ✨
+        </div>
+
+
+
+
+        <img
+          id="out"
+          alt="Resized image"
+        >
+
+
+        <a
+          id="dl"
+          class="download"
+          download="resized-image"
+        >
+          DOWNLOAD IMAGE ↓
+        </a>
+
+
+      </div>
+
+
+    </section>
+
+
+
+    <!-- =========================
+         RIGHT SIDE
+    ========================= -->
+
+    <section class="visual">
+
+
+      <div class="visual-title">
+        DESIGNED TO DELIGHT
+      </div>
+
+
+      <div class="visual-inner">
+
+
+        <!-- IMAGE FRAME -->
+
+        <div class="mock-window">
+
+
+          <!-- CAMERA BEFORE RESIZE -->
+
+          <div
+            class="mock-camera"
+            id="mockCamera"
+          ></div>
+
+
+          <!-- RESIZED IMAGE AFTER RESIZE -->
+
+          <img
+            id="visualPreview"
+            class="visual-preview"
+            alt="Resized preview"
+          >
+
+
+        </div>
+
+
+        <!-- TOP STICKER -->
+
+        <div class="sticker top">
+
+          designed<br>
+          to delight ♡
+
+        </div>
+
+
+        <!-- BOTTOM STICKER -->
+
+        <div class="sticker bottom">
+
+          Resize.<br>
+          Edit.<br>
+          Download.<br>
+          All in one place!
+
+        </div>
+
+
+      </div>
+
+
+    </section>
+
+
+  </main>
+
+
+
+  <script>
+
+
+    /* =========================
+       LAMBDA FUNCTION URL
+    ========================= */
+
+    const URL_ =
+      "https://ytfif5g5deer5cwtvye2gmn7pm0sirqm.lambda-url.ap-southeast-2.on.aws/";
+
+
+
+    /* =========================
+       ELEMENTS
+    ========================= */
+
+    const fileInput =
+      document.getElementById("file");
+
+
+    const fileName =
+      document.getElementById("fileName");
+
+
+    const widthInput =
+      document.getElementById("w");
+
+
+    const heightInput =
+      document.getElementById("h");
+
+
+    const formatInput =
+      document.getElementById("fmt");
+
+
+    const result =
+      document.getElementById("result");
+
+
+    const output =
+      document.getElementById("out");
+
+
+    const download =
+      document.getElementById("dl");
+
+
+    const info =
+      document.getElementById("info");
+
+
+    const error =
+      document.getElementById("error");
+
+
+    /* RIGHT SIDE IMAGE */
+
+    const mockCamera =
+      document.getElementById("mockCamera");
+
+
+    const visualPreview =
+      document.getElementById("visualPreview");
+
+
+
+    /* =========================
+       FILE SELECT
+    ========================= */
+
+    fileInput.addEventListener(
+      "change",
+      () => {
+
+        if (fileInput.files.length > 0) {
+
+          fileName.textContent =
+            fileInput.files[0].name;
+
+        } else {
+
+          fileName.textContent =
+            "No file chosen";
+
+        }
+
+      }
+    );
+
+
+
+    /* =========================
+       RESIZE FUNCTION
+    ========================= */
+
+    async function go() {
+
+
+      /* Clear previous messages */
+
+      error.textContent = "";
+
+      result.classList.remove("show");
+
+
+      /* Check file */
+
+      const file =
+        fileInput.files[0];
+
+
+      if (!file) {
+
+        error.textContent =
+          "Please choose an image first.";
+
+        return;
+
+      }
+
+
+      /* Get values */
+
+      const width =
+        Number(widthInput.value);
+
+
+      const height =
+        Number(heightInput.value);
+
+
+      const format =
+        formatInput.value;
+
+
+      /* Validate dimensions */
+
+      if (
+        width <= 0 ||
+        height <= 0
+      ) {
+
+        error.textContent =
+          "Width and height must be greater than 0.";
+
+        return;
+
+      }
+
+
+
+      /* Read image */
+
+      const reader =
+        new FileReader();
+
+
+      reader.onload = async () => {
+
+
+        try {
+
+
+          /* Send image to Lambda */
+
+          const response =
+            await fetch(
+              URL_,
+              {
+
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+
+                body:
+                  JSON.stringify(
+                    {
+
+                      image:
+                        reader.result
+                          .split(",")[1],
+
+                      width:
+                        width,
+
+                      height:
+                        height,
+
+                      format:
+                        format
+
+                    }
+                  )
+
+              }
+            );
+
+
+
+          /* Convert response */
+
+          const data =
+            await response.json();
+
+
+
+          /* Check Lambda error */
+
+          if (data.error) {
+
+            throw new Error(
+              data.error
+            );
+
+          }
+
+
+
+          /* Create image URL */
+
+          const imageSrc =
+            `data:image/${data.format.toLowerCase()};base64,${data.image}`;
+
+
+
+          /* =========================
+             LEFT PREVIEW
+          ========================= */
+
+          output.src =
+            imageSrc;
+
+
+
+          /* =========================
+             RIGHT PREVIEW
+          ========================= */
+
+          visualPreview.src =
+            imageSrc;
+
+
+          /* Hide camera */
+
+          mockCamera.style.display =
+            "none";
+
+
+          /* Show resized image */
+
+          visualPreview.style.display =
+            "block";
+
+
+
+          /* =========================
+             DOWNLOAD
+          ========================= */
+
+          download.href =
+            imageSrc;
+
+
+          download.download =
+            `resized-image.${data.format.toLowerCase()}`;
+
+
+
+          /* Show result */
+
+          result.classList.add(
+            "show"
+          );
+
+
+        } catch (err) {
+
+
+          error.textContent =
+            "Something went wrong: " +
+            err.message;
+
+
+        }
+
+      };
+
+
+      /* Start reading file */
+
+      reader.readAsDataURL(file);
+
+    }
+
+  </script>
+
+
 </body>
+
 </html>
